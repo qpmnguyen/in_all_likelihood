@@ -1,0 +1,51 @@
+# Example 11.11
+# reading data:
+m1_10   # active
+m2_12   # placebo
+T12 _ scan('epi.dat',skip=2,nlines=1)
+  T1_ T12[1:10]
+  T2_ T12[11:22]
+n12 _ scan('epi.dat',skip=4,nlines=1)
+  n1_ n12[1:10]
+  n2_ n12[11:22]
+t1 _ scan('epi.dat',skip=7,nlines=2)
+t2 _ scan('epi.dat',skip=10)
+
+# cutting into intervals
+cutp_ (1:15)-.01
+  d1_ cut(T1,(cutp-.01))
+  d1_ as.vector(table(d1))
+  risk1_ c(m1,m1- cumsum(d1))
+d2_ cut(T2,(cutp-.1))
+  d2_ as.vector(table(d2))
+  risk2_ c(m2,m2- cumsum(d2))
+
+a1_ cut(t1,c(-.1,cutp))
+  a1_ as.vector(table(a1))
+a2 _ cut(t2,c(-.1,cutp))
+  a2_ as.vector(table(a2))
+  
+
+# data: ...............................Table 11.2
+a_ cbind(1:15,rep(1,15),0:14,risk1,a1,
+         15:29,rep(0,15),0:14,risk2,a2)
+print(a)  # Table 11.2
+
+
+# report:
+a_ rbind(cbind(0:14,rep(1,15),risk1,a1),
+      cbind(0:14,rep(0,15),risk2,a2))
+
+a_ a[-15,]  # remove interval with no event
+xdat_ data.frame(week = factor(a[,1]),treat= a[,2],
+                 risk= a[,3], y=a[,4])
+
+#options(contrasts=c('contr.treatment'))
+xreg_ glm(y~ treat + week+ offset(log(risk)),data=xdat,
+          family=poisson)
+
+bsum_ summary(xreg)
+print(round(bsum$coef[,1:2],3)) # ..........Table 11.3
+
+
+
